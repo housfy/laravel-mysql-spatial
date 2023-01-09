@@ -85,6 +85,7 @@ class GeometryCollection extends Geometry implements IteratorAggregate, ArrayAcc
         return $this->items;
     }
 
+    #[\ReturnTypeWillChange]
     public function getIterator(): ArrayIterator
     {
         return new ArrayIterator($this->items);
