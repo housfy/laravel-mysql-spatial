@@ -6,7 +6,7 @@ use GeoJson\GeoJson;
 use GeoJson\Geometry\MultiPoint as GeoJsonMultiPoint;
 use Grimzy\LaravelMysqlSpatial\Exceptions\InvalidGeoJsonException;
 
-class MultiPoint extends PointCollection
+class MultiPoint extends PointCollection implements \Stringable
 {
     /**
      * The minimum number of items required to create this collection.
@@ -30,30 +30,26 @@ class MultiPoint extends PointCollection
     public static function fromString($wktArgument, $srid = 0)
     {
         $matches = [];
-        preg_match_all('/\(\s*(\d+\s+\d+)\s*\)/', trim($wktArgument), $matches);
+        preg_match_all('/\(\s*(\d+\s+\d+)\s*\)/', trim((string) $wktArgument), $matches);
 
-        $points = array_map(function ($pair) {
-            return Point::fromPair($pair);
-        }, $matches[1]);
+        $points = array_map(fn($pair) => Point::fromPair($pair), $matches[1]);
 
         return new static($points, $srid);
     }
 
-    public function __toString()
+    public function __toString(): string
     {
-        return implode(',', array_map(function (Point $point) {
-            return sprintf('(%s)', $point->toPair());
-        }, $this->items));
+        return implode(',', array_map(fn(Point $point) => sprintf('(%s)', $point->toPair()), $this->items));
     }
 
     public static function fromJson($geoJson)
     {
         if (is_string($geoJson)) {
-            $geoJson = GeoJson::jsonUnserialize(json_decode($geoJson));
+            $geoJson = GeoJson::jsonUnserialize(json_decode($geoJson, null, 512, JSON_THROW_ON_ERROR));
         }
 
         if (!is_a($geoJson, GeoJsonMultiPoint::class)) {
-            throw new InvalidGeoJsonException('Expected '.GeoJsonMultiPoint::class.', got '.get_class($geoJson));
+            throw new InvalidGeoJsonException('Expected '.GeoJsonMultiPoint::class.', got '.$geoJson::class);
         }
 
         $set = [];

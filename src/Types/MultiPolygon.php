@@ -6,7 +6,7 @@ use GeoJson\GeoJson;
 use GeoJson\Geometry\MultiPolygon as GeoJsonMultiPolygon;
 use Grimzy\LaravelMysqlSpatial\Exceptions\InvalidGeoJsonException;
 
-class MultiPolygon extends GeometryCollection
+class MultiPolygon extends GeometryCollection implements \Stringable
 {
     /**
      * The minimum number of items required to create this collection.
@@ -27,21 +27,17 @@ class MultiPolygon extends GeometryCollection
         return sprintf('MULTIPOLYGON(%s)', (string) $this);
     }
 
-    public function __toString()
+    public function __toString(): string
     {
-        return implode(',', array_map(function (Polygon $polygon) {
-            return sprintf('(%s)', (string) $polygon);
-        }, $this->items));
+        return implode(',', array_map(fn(Polygon $polygon) => sprintf('(%s)', (string) $polygon), $this->items));
     }
 
     public static function fromString($wktArgument, $srid = 0)
     {
-        $parts = preg_split('/(\)\s*\)\s*,\s*\(\s*\()/', $wktArgument, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $parts = preg_split('/(\)\s*\)\s*,\s*\(\s*\()/', (string) $wktArgument, -1, PREG_SPLIT_DELIM_CAPTURE);
         $polygons = static::assembleParts($parts);
 
-        return new static(array_map(function ($polygonString) {
-            return Polygon::fromString($polygonString);
-        }, $polygons), $srid);
+        return new static(array_map(fn($polygonString) => Polygon::fromString($polygonString), $polygons), $srid);
     }
 
     /**
@@ -78,7 +74,7 @@ class MultiPolygon extends GeometryCollection
 
         for ($i = 0; $i < $count; $i++) {
             if ($i % 2 !== 0) {
-                list($end, $start) = explode(',', $parts[$i]);
+                [$end, $start] = explode(',', (string) $parts[$i]);
                 $polygons[$i - 1] .= $end;
                 $polygons[++$i] = $start.$parts[$i];
             } else {
@@ -99,11 +95,11 @@ class MultiPolygon extends GeometryCollection
     public static function fromJson($geoJson)
     {
         if (is_string($geoJson)) {
-            $geoJson = GeoJson::jsonUnserialize(json_decode($geoJson));
+            $geoJson = GeoJson::jsonUnserialize(json_decode($geoJson, null, 512, JSON_THROW_ON_ERROR));
         }
 
         if (!is_a($geoJson, GeoJsonMultiPolygon::class)) {
-            throw new InvalidGeoJsonException('Expected '.GeoJsonMultiPolygon::class.', got '.get_class($geoJson));
+            throw new InvalidGeoJsonException('Expected '.GeoJsonMultiPolygon::class.', got '.$geoJson::class);
         }
 
         $set = [];

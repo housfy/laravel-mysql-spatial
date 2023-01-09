@@ -6,7 +6,7 @@ use GeoJson\GeoJson;
 use GeoJson\Geometry\Point as GeoJsonPoint;
 use Grimzy\LaravelMysqlSpatial\Exceptions\InvalidGeoJsonException;
 
-class Point extends Geometry
+class Point extends Geometry implements \Stringable
 {
     protected $lat;
 
@@ -47,7 +47,7 @@ class Point extends Geometry
 
     public static function fromPair($pair, $srid = 0)
     {
-        list($lng, $lat) = explode(' ', trim($pair, "\t\n\r \x0B()"));
+        [$lng, $lat] = explode(' ', trim((string) $pair, "\t\n\r \x0B()"));
 
         return new static((float) $lat, (float) $lng, (int) $srid);
     }
@@ -62,7 +62,7 @@ class Point extends Geometry
         return static::fromPair($wktArgument, $srid);
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return $this->getLng().' '.$this->getLat();
     }
@@ -75,11 +75,11 @@ class Point extends Geometry
     public static function fromJson($geoJson)
     {
         if (is_string($geoJson)) {
-            $geoJson = GeoJson::jsonUnserialize(json_decode($geoJson));
+            $geoJson = GeoJson::jsonUnserialize(json_decode($geoJson, null, 512, JSON_THROW_ON_ERROR));
         }
 
         if (!is_a($geoJson, GeoJsonPoint::class)) {
-            throw new InvalidGeoJsonException('Expected '.GeoJsonPoint::class.', got '.get_class($geoJson));
+            throw new InvalidGeoJsonException('Expected '.GeoJsonPoint::class.', got '.$geoJson::class);
         }
 
         $coordinates = $geoJson->getCoordinates();

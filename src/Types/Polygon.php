@@ -16,11 +16,11 @@ class Polygon extends MultiLineString
     public static function fromJson($geoJson)
     {
         if (is_string($geoJson)) {
-            $geoJson = GeoJson::jsonUnserialize(json_decode($geoJson));
+            $geoJson = GeoJson::jsonUnserialize(json_decode($geoJson, null, 512, JSON_THROW_ON_ERROR));
         }
 
         if (!is_a($geoJson, GeoJsonPolygon::class)) {
-            throw new InvalidGeoJsonException('Expected '.GeoJsonPolygon::class.', got '.get_class($geoJson));
+            throw new InvalidGeoJsonException('Expected '.GeoJsonPolygon::class.', got '.$geoJson::class);
         }
 
         $set = [];

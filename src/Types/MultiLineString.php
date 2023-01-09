@@ -6,7 +6,7 @@ use GeoJson\GeoJson;
 use GeoJson\Geometry\MultiLineString as GeoJsonMultiLineString;
 use Grimzy\LaravelMysqlSpatial\Exceptions\InvalidGeoJsonException;
 
-class MultiLineString extends GeometryCollection
+class MultiLineString extends GeometryCollection implements \Stringable
 {
     /**
      * The minimum number of items required to create this collection.
@@ -34,19 +34,15 @@ class MultiLineString extends GeometryCollection
 
     public static function fromString($wktArgument, $srid = 0)
     {
-        $str = preg_split('/\)\s*,\s*\(/', substr(trim($wktArgument), 1, -1));
-        $lineStrings = array_map(function ($data) {
-            return LineString::fromString($data);
-        }, $str);
+        $str = preg_split('/\)\s*,\s*\(/', substr(trim((string) $wktArgument), 1, -1));
+        $lineStrings = array_map(fn($data) => LineString::fromString($data), $str);
 
         return new static($lineStrings, $srid);
     }
 
-    public function __toString()
+    public function __toString(): string
     {
-        return implode(',', array_map(function (LineString $lineString) {
-            return sprintf('(%s)', (string) $lineString);
-        }, $this->getLineStrings()));
+        return implode(',', array_map(fn(LineString $lineString) => sprintf('(%s)', (string) $lineString), $this->getLineStrings()));
     }
 
     public function offsetSet($offset, $value)
@@ -59,11 +55,11 @@ class MultiLineString extends GeometryCollection
     public static function fromJson($geoJson)
     {
         if (is_string($geoJson)) {
-            $geoJson = GeoJson::jsonUnserialize(json_decode($geoJson));
+            $geoJson = GeoJson::jsonUnserialize(json_decode($geoJson, null, 512, JSON_THROW_ON_ERROR));
         }
 
         if (!is_a($geoJson, GeoJsonMultiLineString::class)) {
-            throw new InvalidGeoJsonException('Expected '.GeoJsonMultiLineString::class.', got '.get_class($geoJson));
+            throw new InvalidGeoJsonException('Expected '.GeoJsonMultiLineString::class.', got '.$geoJson::class);
         }
 
         $set = [];

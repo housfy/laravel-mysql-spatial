@@ -38,43 +38,35 @@ abstract class Geometry implements GeometryInterface, Jsonable, \JsonSerializabl
 
     public static function getWKTArgument($value)
     {
-        $left = strpos($value, '(');
-        $right = strrpos($value, ')');
+        $left = strpos((string) $value, '(');
+        $right = strrpos((string) $value, ')');
 
-        return substr($value, $left + 1, $right - $left - 1);
+        return substr((string) $value, $left + 1, $right - $left - 1);
     }
 
     public static function getWKTClass($value)
     {
-        $left = strpos($value, '(');
-        $type = trim(substr($value, 0, $left));
+        $left = strpos((string) $value, '(');
+        $type = trim(substr((string) $value, 0, $left));
 
-        switch (strtoupper($type)) {
-            case 'POINT':
-                return Point::class;
-            case 'LINESTRING':
-                return LineString::class;
-            case 'POLYGON':
-                return Polygon::class;
-            case 'MULTIPOINT':
-                return MultiPoint::class;
-            case 'MULTILINESTRING':
-                return MultiLineString::class;
-            case 'MULTIPOLYGON':
-                return MultiPolygon::class;
-            case 'GEOMETRYCOLLECTION':
-                return GeometryCollection::class;
-            default:
-                throw new UnknownWKTTypeException('Type was '.$type);
-        }
+        return match (strtoupper($type)) {
+            'POINT' => Point::class,
+            'LINESTRING' => LineString::class,
+            'POLYGON' => Polygon::class,
+            'MULTIPOINT' => MultiPoint::class,
+            'MULTILINESTRING' => MultiLineString::class,
+            'MULTIPOLYGON' => MultiPolygon::class,
+            'GEOMETRYCOLLECTION' => GeometryCollection::class,
+            default => throw new UnknownWKTTypeException('Type was '.$type),
+        };
     }
 
     public static function fromWKB($wkb)
     {
-        $srid = substr($wkb, 0, 4);
+        $srid = substr((string) $wkb, 0, 4);
         $srid = unpack('L', $srid)[1];
 
-        $wkb = substr($wkb, 4);
+        $wkb = substr((string) $wkb, 4);
         $parser = new Parser(new Factory());
 
         /** @var Geometry $parsed */
@@ -97,7 +89,7 @@ abstract class Geometry implements GeometryInterface, Jsonable, \JsonSerializabl
     public static function fromJson($geoJson)
     {
         if (is_string($geoJson)) {
-            $geoJson = GeoJson::jsonUnserialize(json_decode($geoJson));
+            $geoJson = GeoJson::jsonUnserialize(json_decode($geoJson, null, 512, JSON_THROW_ON_ERROR));
         }
 
         if ($geoJson->getType() === 'FeatureCollection') {

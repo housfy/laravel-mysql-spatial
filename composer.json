@@ -27,7 +27,8 @@
         "laravel/laravel": "^9.0",
         "doctrine/dbal": "^3.3",
         "laravel/browser-kit-testing": "^6.3",
-        "mockery/mockery": "^1.4.4"
+        "mockery/mockery": "^1.4.4",
+        "rector/rector": "^0.15.3"
     },
     "autoload": {
         "psr-4": {
